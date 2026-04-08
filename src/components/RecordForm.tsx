@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { Patient, DentalRecord } from '../types';
-import { ClipboardList, Plus, History, Calendar, User as UserIcon, ArrowLeft, Send } from 'lucide-react';
-import { motion } from 'motion/react';
+import { ClipboardList, Plus, History, Calendar, User as UserIcon, ArrowLeft, Send, X, FileText, Activity, HeartPulse, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface RecordFormProps {
   patient: Patient;
@@ -14,6 +14,7 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
   const [records, setRecords] = useState<DentalRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<DentalRecord | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<DentalRecord>>({
     examiner: '',
@@ -602,7 +603,12 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
                     </div>
                   </div>
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Pemeriksa</span>
+                    <button
+                      onClick={() => setSelectedRecord(record)}
+                      className="text-[10px] text-blue-600 font-bold uppercase hover:underline"
+                    >
+                      Lihat Detail
+                    </button>
                     <span className="text-xs font-medium text-slate-700">{record.examiner}</span>
                   </div>
                 </motion.div>
@@ -611,6 +617,183 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
           </div>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      <AnimatePresence>
+        {selectedRecord && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl custom-scrollbar"
+            >
+              <div className="sticky top-0 bg-white border-b border-slate-100 px-8 py-6 flex items-center justify-between z-10">
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-100 p-2 rounded-xl">
+                    <FileText className="text-blue-600" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900">Detail Hasil Survei</h3>
+                    <p className="text-slate-500 text-sm">
+                      {selectedRecord.surveyDate?.toDate().toLocaleDateString('id-ID', { 
+                        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedRecord(null)}
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                  <X size={24} className="text-slate-400" />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-8">
+                {/* Section 1: Vital Signs */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-blue-600 font-bold uppercase tracking-widest text-xs">
+                    <Activity size={16} />
+                    Tanda Vital & Riwayat Medis
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">TD (BP)</div>
+                      <div className="text-lg font-bold text-slate-900">{selectedRecord.vitalSigns?.bp || '-'}</div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Nadi (Pulse)</div>
+                      <div className="text-lg font-bold text-slate-900">{selectedRecord.vitalSigns?.pulse || '0'} <span className="text-xs font-normal">BPM</span></div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Nafas (Resp)</div>
+                      <div className="text-lg font-bold text-slate-900">{selectedRecord.vitalSigns?.respiration || '0'} <span className="text-xs font-normal">RPM</span></div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Status Sehat</div>
+                      <div className="text-lg font-bold text-slate-900">{selectedRecord.medicalHistory?.isHealthy ? 'Ya' : 'Tidak'}</div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl space-y-2">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase">Penyakit Serius / Operasi</div>
+                    <div className="text-sm text-slate-700">{selectedRecord.medicalHistory?.seriousIllness || 'Tidak ada'}</div>
+                  </div>
+                </section>
+
+                {/* Section 2: Dental History */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-blue-600 font-bold uppercase tracking-widest text-xs">
+                    <HeartPulse size={16} />
+                    Riwayat Kesehatan Gigi
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl space-y-4">
+                    <div>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase">Alasan Kunjungan</div>
+                      <div className="text-sm text-slate-700 font-medium">{selectedRecord.dentalHistory?.reason || '-'}</div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">Pengalaman Sebelumnya</div>
+                        <div className="text-sm text-slate-700">{selectedRecord.dentalHistory?.previousExperience || '-'}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">Keyakinan Pasien</div>
+                        <div className="text-sm text-slate-700">{selectedRecord.dentalHistory?.oralHealthBelief || '-'}</div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Section 3: Indices */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-blue-600 font-bold uppercase tracking-widest text-xs">
+                    <Info size={16} />
+                    Indeks Klinis (OHI-S, DMF-T, def-t)
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-blue-50 p-5 rounded-3xl border border-blue-100">
+                      <div className="text-xs font-bold text-blue-600 uppercase mb-3">OHI-S</div>
+                      <div className="flex items-end gap-2 mb-2">
+                        <div className="text-3xl font-black text-blue-900">{selectedRecord.ohiS?.totalScore?.toFixed(1)}</div>
+                        <div className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase mb-1 ${
+                          selectedRecord.ohiS?.category === 'Baik' ? 'bg-green-100 text-green-700' : 
+                          selectedRecord.ohiS?.category === 'Sedang' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {selectedRecord.ohiS?.category}
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-blue-400">DI: {selectedRecord.ohiS?.debrisIndex} | CI: {selectedRecord.ohiS?.calculusIndex}</div>
+                    </div>
+
+                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-200">
+                      <div className="text-xs font-bold text-slate-500 uppercase mb-3">DMF-T (Permanen)</div>
+                      <div className="text-3xl font-black text-slate-900 mb-2">{selectedRecord.dmft?.total}</div>
+                      <div className="flex gap-3 text-[10px] text-slate-400 font-bold">
+                        <span>D: {selectedRecord.dmft?.d}</span>
+                        <span>M: {selectedRecord.dmft?.m}</span>
+                        <span>F: {selectedRecord.dmft?.f}</span>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-slate-200 flex gap-4 text-[10px] font-bold">
+                        <span className="text-blue-600">RTI: {selectedRecord.indices?.rti?.toFixed(1)}%</span>
+                        <span className="text-green-600">PTI: {selectedRecord.indices?.pti?.toFixed(1)}%</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-5 rounded-3xl border border-slate-200">
+                      <div className="text-xs font-bold text-slate-500 uppercase mb-3">def-t (Susu)</div>
+                      <div className="text-3xl font-black text-slate-900 mb-2">{selectedRecord.deft?.total}</div>
+                      <div className="flex gap-3 text-[10px] text-slate-400 font-bold">
+                        <span>d: {selectedRecord.deft?.d}</span>
+                        <span>e: {selectedRecord.deft?.e}</span>
+                        <span>f: {selectedRecord.deft?.f}</span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Section 4: Diagnosis */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-blue-600 font-bold uppercase tracking-widest text-xs">
+                    <ClipboardList size={16} />
+                    Diagnosis & Perencanaan
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Kebutuhan</div>
+                      <div className="text-sm text-slate-700">{selectedRecord.diagnosis?.needs || '-'}</div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Penyebab</div>
+                      <div className="text-sm text-slate-700">{selectedRecord.diagnosis?.causes || '-'}</div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Tanda & Gejala</div>
+                      <div className="text-sm text-slate-700">{selectedRecord.diagnosis?.signs || '-'}</div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Intervensi</div>
+                      <div className="text-sm text-slate-700">{selectedRecord.diagnosis?.interventions || '-'}</div>
+                    </div>
+                  </div>
+                </section>
+
+                <div className="pt-8 border-t border-slate-100 flex justify-between items-center text-sm">
+                  <div className="text-slate-500">
+                    Pemeriksa: <span className="font-bold text-slate-900">{selectedRecord.examiner}</span>
+                  </div>
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
+                  >
+                    Cetak Laporan
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
