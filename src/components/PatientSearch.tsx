@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { db, handleFirestoreError, OperationType } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Patient } from '../types';
-import { Search, User, ArrowRight, AlertCircle } from 'lucide-react';
+import { Search, User, ArrowRight, AlertCircle, Clock } from 'lucide-react';
 
 interface PatientSearchProps {
   onSelect: (patient: Patient) => void;
@@ -12,7 +12,22 @@ export default function PatientSearch({ onSelect }: PatientSearchProps) {
   const [nik, setNik] = useState('');
   const [loading, setLoading] = useState(false);
   const [patient, setPatient] = useState<Patient | null>(null);
+  const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchRecent = async () => {
+      try {
+        const q = query(collection(db, 'patients'), orderBy('createdAt', 'desc'), limit(5));
+        const snap = await getDocs(q);
+        const data = snap.docs.map(d => d.data() as Patient);
+        setRecentPatients(data);
+      } catch (err) {
+        console.error('Error fetching recent patients:', err);
+      }
+    };
+    fetchRecent();
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +144,33 @@ export default function PatientSearch({ onSelect }: PatientSearchProps) {
             Lihat Rekam Medis
             <ArrowRight size={18} />
           </button>
+        </div>
+      )}
+
+      {!patient && recentPatients.length > 0 && (
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4 text-slate-900 font-bold text-sm">
+            <Clock size={16} className="text-blue-600" />
+            Pasien Terbaru
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {recentPatients.map((p) => (
+              <button
+                key={p.nik}
+                onClick={() => setPatient(p)}
+                className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all text-left"
+              >
+                <div className="w-8 h-8 bg-slate-50 rounded-full flex items-center justify-center border border-slate-100">
+                  <User size={14} className="text-slate-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-slate-900 truncate">{p.name}</div>
+                  <div className="text-[10px] text-slate-500 truncate">NIK: {p.nik}</div>
+                </div>
+                <ArrowRight size={14} className="text-slate-300" />
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

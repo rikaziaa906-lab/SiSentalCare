@@ -42,6 +42,38 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
     dmft: { d: 0, m: 0, f: 0, total: 0 },
     deft: { d: 0, e: 0, f: 0, total: 0 },
     indices: { rti: 0, pti: 0 },
+    pharmacologicalHistory: {
+      takingMeds: false,
+      medNames: '',
+      medPurpose: '',
+      sideEffects: '',
+      positiveEffects: '',
+      dosageIssues: '',
+      regularConsumption: false
+    },
+    habits: {
+      brushingTools: [],
+      toothpasteType: [],
+      brushingDuration: 0,
+      brushingFrequency: '',
+      difficultyBrushing: false,
+      monthlyCheckup: false,
+      badHabits: []
+    },
+    diet: {
+      candy: 'Jarang',
+      sweetDrinks: 'Jarang',
+      driedFruit: 'Jarang',
+      cannedDrinks: 'Jarang',
+      gum: 'Jarang',
+      crackers: 'Jarang',
+      syrup: 'Jarang',
+      chips: 'Jarang',
+      cookies: 'Jarang',
+      others: ''
+    },
+    extraOral: { face: 'Simetris', lymphNodes: 'Normal' },
+    intraOral: { mucosa: 'Normal', gingiva: 'Normal', palate: 'Normal', tongue: 'Normal', floorOfMouth: 'Normal' },
     diagnosis: {
       needs: '',
       causes: '',
@@ -230,6 +262,32 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
                   onChange={(e) => setFormData({ ...formData, medicalHistory: { ...formData.medicalHistory!, bloodClotting: e.target.value } })}
                 />
               </div>
+
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-bold text-slate-700 mb-3">Riwayat Farmakologi</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-4">
+                    <label className="text-xs font-medium text-slate-500">Sedang minum obat?</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 text-xs">
+                        <input type="radio" checked={formData.pharmacologicalHistory?.takingMeds} onChange={() => setFormData({ ...formData, pharmacologicalHistory: { ...formData.pharmacologicalHistory!, takingMeds: true } })} /> Ya
+                      </label>
+                      <label className="flex items-center gap-2 text-xs">
+                        <input type="radio" checked={!formData.pharmacologicalHistory?.takingMeds} onChange={() => setFormData({ ...formData, pharmacologicalHistory: { ...formData.pharmacologicalHistory!, takingMeds: false } })} /> Tidak
+                      </label>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">Nama Obat & Tujuan</label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      value={formData.pharmacologicalHistory?.medNames}
+                      onChange={(e) => setFormData({ ...formData, pharmacologicalHistory: { ...formData.pharmacologicalHistory!, medNames: e.target.value } })}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -273,6 +331,34 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
                   <option value="Tidak Setuju">Tidak Setuju</option>
                   <option value="Sangat tidak setuju">Sangat tidak setuju</option>
                 </select>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-bold text-slate-700 mb-3">Kebiasaan & Pola Makan</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">Frekuensi Sikat Gigi</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: 2x sehari"
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      value={formData.habits?.brushingFrequency}
+                      onChange={(e) => setFormData({ ...formData, habits: { ...formData.habits!, brushingFrequency: e.target.value } })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-slate-500">Konsumsi Makanan Manis</label>
+                    <select
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      value={formData.diet?.sweetDrinks}
+                      onChange={(e) => setFormData({ ...formData, diet: { ...formData.diet!, sweetDrinks: e.target.value } })}
+                    >
+                      <option value="Sering">Sering</option>
+                      <option value="Jarang">Jarang</option>
+                      <option value="Tidak Pernah">Tidak Pernah</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -392,6 +478,30 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
                 </div>
                 <div className="pt-2 text-sm">
                   <span className="text-slate-500">Total def-t: <span className="font-bold text-slate-900">{formData.deft?.total}</span></span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100">
+              <h4 className="text-sm font-bold text-slate-700 mb-3">Pemeriksaan Klinis</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500">Ekstra Oral (Muka/Kelenjar)</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    value={formData.extraOral?.face}
+                    onChange={(e) => setFormData({ ...formData, extraOral: { ...formData.extraOral!, face: e.target.value } })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-slate-500">Intra Oral (Mukosa/Gingiva)</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                    value={formData.intraOral?.gingiva}
+                    onChange={(e) => setFormData({ ...formData, intraOral: { ...formData.intraOral!, gingiva: e.target.value } })}
+                  />
                 </div>
               </div>
             </div>
@@ -679,13 +789,19 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
                     <div className="text-[10px] text-slate-400 font-bold uppercase">Penyakit Serius / Operasi</div>
                     <div className="text-sm text-slate-700">{selectedRecord.medicalHistory?.seriousIllness || 'Tidak ada'}</div>
                   </div>
+                  {selectedRecord.pharmacologicalHistory?.takingMeds && (
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                      <div className="text-[10px] text-blue-400 font-bold uppercase">Riwayat Farmakologi</div>
+                      <div className="text-sm text-blue-900 font-medium">Sedang mengonsumsi: {selectedRecord.pharmacologicalHistory.medNames}</div>
+                    </div>
+                  )}
                 </section>
 
-                {/* Section 2: Dental History */}
+                {/* Section 2: Dental History & Habits */}
                 <section className="space-y-4">
                   <div className="flex items-center gap-2 text-blue-600 font-bold uppercase tracking-widest text-xs">
                     <HeartPulse size={16} />
-                    Riwayat Kesehatan Gigi
+                    Riwayat Kesehatan Gigi & Kebiasaan
                   </div>
                   <div className="bg-slate-50 p-4 rounded-2xl space-y-4">
                     <div>
@@ -694,22 +810,22 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase">Pengalaman Sebelumnya</div>
-                        <div className="text-sm text-slate-700">{selectedRecord.dentalHistory?.previousExperience || '-'}</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">Frekuensi Sikat Gigi</div>
+                        <div className="text-sm text-slate-700">{selectedRecord.habits?.brushingFrequency || '-'}</div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase">Keyakinan Pasien</div>
-                        <div className="text-sm text-slate-700">{selectedRecord.dentalHistory?.oralHealthBelief || '-'}</div>
+                        <div className="text-[10px] text-slate-400 font-bold uppercase">Pola Makan Manis</div>
+                        <div className="text-sm text-slate-700">{selectedRecord.diet?.sweetDrinks || '-'}</div>
                       </div>
                     </div>
                   </div>
                 </section>
 
-                {/* Section 3: Indices */}
+                {/* Section 3: Indices & Clinical Findings */}
                 <section className="space-y-4">
                   <div className="flex items-center gap-2 text-blue-600 font-bold uppercase tracking-widest text-xs">
                     <Info size={16} />
-                    Indeks Klinis (OHI-S, DMF-T, def-t)
+                    Indeks Klinis & Pemeriksaan
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-blue-50 p-5 rounded-3xl border border-blue-100">
@@ -748,6 +864,17 @@ export default function RecordForm({ patient, onBack }: RecordFormProps) {
                         <span>e: {selectedRecord.deft?.e}</span>
                         <span>f: {selectedRecord.deft?.f}</span>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Ekstra Oral</div>
+                      <div className="text-sm text-slate-700">{selectedRecord.extraOral?.face || '-'}</div>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-2xl">
+                      <div className="text-[10px] text-slate-400 font-bold uppercase mb-1">Intra Oral</div>
+                      <div className="text-sm text-slate-700">{selectedRecord.intraOral?.gingiva || '-'}</div>
                     </div>
                   </div>
                 </section>

@@ -7,10 +7,11 @@ import { useState, useEffect } from 'react';
 import { auth, signInWithGoogle, logout, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { LogIn, LogOut, UserPlus, Search, ClipboardList, Stethoscope, ShieldCheck, UserCog } from 'lucide-react';
+import { LogIn, LogOut, UserPlus, Search, ClipboardList, Stethoscope, ShieldCheck, UserCog, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PatientForm from './components/PatientForm';
 import PatientSearch from './components/PatientSearch';
+import PatientList from './components/PatientList';
 import RecordForm from './components/RecordForm';
 import { LoginForm } from './components/LoginForm';
 import { Patient, AppUser } from './types';
@@ -19,7 +20,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'register' | 'search' | 'record'>('register');
+  const [activeTab, setActiveTab] = useState<'register' | 'search' | 'record' | 'list'>('register');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
   useEffect(() => {
@@ -131,6 +132,17 @@ export default function App() {
             <Search size={18} />
             Cari Pasien
           </button>
+          {(appUser?.role === 'admin' || appUser?.role === 'dokter gigi') && (
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Users size={18} />
+              Daftar Pasien
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('record')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -172,6 +184,23 @@ export default function App() {
                   setSelectedPatient(patient);
                   setActiveTab('record');
                 }} />
+              </motion.div>
+            )}
+
+            {activeTab === 'list' && (appUser?.role === 'admin' || appUser?.role === 'dokter gigi') && (
+              <motion.div
+                key="list"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+              >
+                <PatientList 
+                  userRole={appUser?.role}
+                  onSelect={(patient) => {
+                    setSelectedPatient(patient);
+                    setActiveTab('record');
+                  }} 
+                />
               </motion.div>
             )}
 
