@@ -4,24 +4,48 @@
  */
 
 import { useState, useEffect } from 'react';
-import { auth, signInWithGoogle, logout } from './firebase';
+import { auth, signInWithGoogle, logout, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { LogIn, LogOut, UserPlus, Search, ClipboardList, Stethoscope } from 'lucide-react';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { LogIn, LogOut, UserPlus, Search, ClipboardList, Stethoscope, ShieldCheck, UserCog } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import PatientForm from './components/PatientForm';
 import PatientSearch from './components/PatientSearch';
 import RecordForm from './components/RecordForm';
-import { Patient } from './types';
+import { LoginForm } from './components/LoginForm';
+import { Patient, AppUser } from './types';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'register' | 'search' | 'record'>('register');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        // Fetch or create user document
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userDoc.exists()) {
+          setAppUser(userDoc.data() as AppUser);
+        } else {
+          // Default role for Google login if not exists
+          const newUser: AppUser = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            displayName: firebaseUser.displayName || 'User',
+            role: 'TGM', // Default role
+            photoURL: firebaseUser.photoURL || undefined,
+            createdAt: serverTimestamp()
+          };
+          await setDoc(doc(db, 'users', firebaseUser.uid), newUser);
+          setAppUser(newUser);
+        }
+      } else {
+        setAppUser(null);
+      }
       setLoading(false);
     });
     return unsubscribe;
@@ -38,24 +62,14 @@ export default function App() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center"
-        >
-          <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Stethoscope className="text-blue-600 w-8 h-8" />
+        <div className="mb-8 text-center">
+          <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-200">
+            <Stethoscope className="text-white w-10 h-10" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Asuhan Kesehatan Gigi</h1>
-          <p className="text-slate-600 mb-8">Aplikasi Survei Pemeriksaan Kesehatan Gigi dan Mulut Masyarakat</p>
-          <button
-            onClick={signInWithGoogle}
-            className="w-full flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg shadow-blue-200"
-          >
-            <LogIn size={20} />
-            Masuk dengan Google
-          </button>
-        </motion.div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">SiDental Care</h1>
+          <p className="text-slate-500 font-medium">Sistem Informasi Survei Kesehatan Gigi</p>
+        </div>
+        <LoginForm onSuccess={() => {}} />
       </div>
     );
   }
@@ -71,13 +85,23 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-slate-600">
-              <img src={user.photoURL || ''} alt="" className="w-8 h-8 rounded-full border border-slate-200" referrerPolicy="no-referrer" />
-              <span className="hidden md:block">{user.displayName}</span>
+            <div className="flex items-center gap-3">
+              <div className="text-right hidden md:block">
+                <div className="text-sm font-bold text-slate-900">{appUser?.displayName || user.displayName}</div>
+                <div className="text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                  {appUser?.role || 'Staff'}
+                </div>
+              </div>
+              <img 
+                src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(appUser?.displayName || 'User')}&background=random`} 
+                alt="" 
+                className="w-10 h-10 rounded-full border-2 border-white shadow-sm" 
+                referrerPolicy="no-referrer" 
+              />
             </div>
             <button
               onClick={logout}
-              className="text-slate-400 hover:text-red-500 transition-colors"
+              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
               title="Keluar"
             >
               <LogOut size={20} />

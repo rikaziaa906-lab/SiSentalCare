@@ -44,6 +44,18 @@ service cloud.firestore {
           (request.auth.token.email == "rikaziaa906@gmail.com" && request.auth.token.email_verified == true));
     }
 
+    function isTGM() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'TGM';
+    }
+
+    function isDokterGigi() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'dokter gigi';
+    }
+
+    function isStaff() {
+      return isAdmin() || isTGM() || isDokterGigi();
+    }
+
     function isValidPatient(data) {
       return data.keys().hasAll(['nik', 'name', 'gender', 'pob', 'dob', 'address', 'category', 'createdAt']) &&
              data.nik is string && data.nik.size() >= 10 && data.nik.size() <= 20 &&
@@ -83,14 +95,14 @@ service cloud.firestore {
 
     match /patients/{nik} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidPatient(request.resource.data);
-      allow update: if isAuthenticated() && isValidPatient(request.resource.data);
+      allow create: if isStaff() && isValidPatient(request.resource.data);
+      allow update: if isStaff() && isValidPatient(request.resource.data);
       allow delete: if isAdmin();
 
       match /records/{recordId} {
         allow read: if isAuthenticated();
-        allow create: if isAuthenticated() && isValidRecord(request.resource.data);
-        allow update: if isAuthenticated() && isValidRecord(request.resource.data);
+        allow create: if isStaff() && isValidRecord(request.resource.data);
+        allow update: if isStaff() && isValidRecord(request.resource.data);
         allow delete: if isAdmin();
       }
     }

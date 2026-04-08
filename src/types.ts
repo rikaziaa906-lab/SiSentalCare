@@ -1,3 +1,14 @@
+export type UserRole = 'admin' | 'TGM' | 'dokter gigi';
+
+export interface AppUser {
+  uid: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  photoURL?: string;
+  createdAt: any;
+}
+
 export interface Patient {
   nik: string;
   name: string;

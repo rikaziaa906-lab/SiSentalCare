@@ -56,9 +56,27 @@
         "diagnosis": { "type": "object" }
       },
       "required": ["patientNik", "surveyDate", "examiner"]
+    },
+    "User": {
+      "title": "User",
+      "description": "Application user with roles.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "TGM", "dokter gigi"] },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "role"]
     }
   },
   "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Application users and their roles."
+    },
     "/patients/{nik}": {
       "schema": "Patient",
       "description": "Collection of patients indexed by NIK."
