@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: patients
+    // Document ID: {nik}
+    // Fields:
+    //   - nik: string (required)
+    //   - name: string (required)
+    //   - gender: string (required, 'Laki-laki' or 'Perempuan')
+    //   - pob: string (required)
+    //   - dob: string (required, ISO 8601)
+    //   - address: string (required)
+    //   - category: string (required, 'Sekolah' or 'Umum')
+    //   - className: string (optional)
+    //   - occupation: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: patients/{nik}/records
+    // Document ID: {recordId}
+    // Fields:
+    //   - patientNik: string (required)
+    //   - surveyDate: timestamp (required)
+    //   - findings: string (required)
+    //   - recommendations: string (required)
+    //   - examiner: string (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "rikaziaa906@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidPatient(data) {
+      return data.keys().hasAll(['nik', 'name', 'gender', 'pob', 'dob', 'address', 'category', 'createdAt']) &&
+             data.nik is string && data.nik.size() >= 10 && data.nik.size() <= 20 &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.gender in ['Laki-laki', 'Perempuan'] &&
+             data.pob is string && data.pob.size() > 0 &&
+             data.dob is string && data.dob.matches("^\\d{4}-\\d{2}-\\d{2}$") &&
+             data.address is string && data.address.size() > 0 &&
+             data.category in ['Sekolah', 'Umum'] &&
+             (!('className' in data) || data.className is string) &&
+             (!('occupation' in data) || data.occupation is string) &&
+             (!('religion' in data) || data.religion is string) &&
+             (!('nationality' in data) || data.nationality is string) &&
+             (!('bloodType' in data) || data.bloodType is string) &&
+             (!('phone' in data) || data.phone is string) &&
+             (!('status' in data) || data.status is string) &&
+             (!('weight' in data) || data.weight is number) &&
+             (!('height' in data) || data.height is number) &&
+             (!('insurance' in data) || data.insurance is string);
+    }
+
+    function isValidRecord(data) {
+      return data.keys().hasAll(['patientNik', 'surveyDate', 'examiner']) &&
+             data.patientNik is string &&
+             data.surveyDate is timestamp &&
+             data.examiner is string && data.examiner.size() > 0 && data.examiner.size() < 100;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAdmin();
+    }
+
+    match /patients/{nik} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidPatient(request.resource.data);
+      allow update: if isAuthenticated() && isValidPatient(request.resource.data);
+      allow delete: if isAdmin();
+
+      match /records/{recordId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && isValidRecord(request.resource.data);
+        allow update: if isAuthenticated() && isValidRecord(request.resource.data);
+        allow delete: if isAdmin();
+      }
+    }
+  }
+}

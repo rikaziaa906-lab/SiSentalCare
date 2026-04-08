@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "Patient": {
+      "title": "Patient",
+      "description": "Information about the patient being surveyed.",
+      "type": "object",
+      "properties": {
+        "nik": { "type": "string" },
+        "name": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Laki-laki", "Perempuan"] },
+        "pob": { "type": "string" },
+        "dob": { "type": "string", "format": "date" },
+        "address": { "type": "string" },
+        "category": { "type": "string", "enum": ["Sekolah", "Umum"] },
+        "className": { "type": "string" },
+        "occupation": { "type": "string" },
+        "religion": { "type": "string" },
+        "nationality": { "type": "string" },
+        "bloodType": { "type": "string" },
+        "phone": { "type": "string" },
+        "status": { "type": "string" },
+        "weight": { "type": "number" },
+        "height": { "type": "number" },
+        "insurance": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["nik", "name", "gender", "pob", "dob", "address", "category"]
+    },
+    "DentalSurvey": {
+      "title": "Dental Survey",
+      "description": "Comprehensive dental health assessment.",
+      "type": "object",
+      "properties": {
+        "patientNik": { "type": "string" },
+        "surveyDate": { "type": "string", "format": "date-time" },
+        "examiner": { "type": "string" },
+        "vitalSigns": {
+          "type": "object",
+          "properties": {
+            "bp": { "type": "string" },
+            "pulse": { "type": "number" },
+            "respiration": { "type": "number" }
+          }
+        },
+        "medicalHistory": {
+          "type": "object",
+          "properties": {
+            "isHealthy": { "type": "boolean" },
+            "seriousIllness": { "type": "string" },
+            "bloodClotting": { "type": "string" },
+            "allergies": { "type": "object" }
+          }
+        },
+        "dentalHistory": { "type": "object" },
+        "odontogram": { "type": "object" },
+        "diagnosis": { "type": "object" }
+      },
+      "required": ["patientNik", "surveyDate", "examiner"]
+    }
+  },
+  "firestore": {
+    "/patients/{nik}": {
+      "schema": "Patient",
+      "description": "Collection of patients indexed by NIK."
+    },
+    "/patients/{nik}/records/{recordId}": {
+      "schema": "DentalRecord",
+      "description": "Dental records for a specific patient."
+    }
+  }
+}
